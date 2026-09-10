@@ -15,7 +15,7 @@
 nvidia_mfg_bridge 在此基础上做了大量进一步开发：
 
 - 支持最高 **6 倍**插帧（原版只有 2 倍）
-- 新增 NVIDIA 官方 DLSS 帧生成移植到 RTX 30 原生运行、可选 Intel XeSS 插帧、NVIDIA 硬件光流加速、Home 键手动倍率覆盖菜单等多种可选功能
+- 新增 NVIDIA 官方 DLSS 帧生成移植到 RTX 20 / RTX 30 原生运行（2x~6x）、可选 Intel XeSS 插帧、NVIDIA 硬件光流加速、Home 键手动倍率覆盖菜单等多种可选功能
 - 大幅提升了高倍率下的运行稳定性和流畅度
 - 修复了多个会导致游戏画面卡死的问题
 - 整体兼容性和健壮性都有明显提升
@@ -29,16 +29,17 @@ nvidia_mfg_bridge 在此基础上做了大量进一步开发：
 
 ## 安装方法
 
+> **从旧版本升级：** 这个版本把所有功能合并进了单一的 `nvngx.dll`，不再需要 `dxgi.dll` 或 `nvidia_mfg_bridge.dll`。如果你是从旧版本升级上来的，安装新版本之前请先把游戏目录里残留的 `dxgi.dll`、`nvidia_mfg_bridge.dll` 删掉，避免跟新版本冲突或产生混淆。
+
 Release 压缩包内包含：
 
-1. **nvngx.dll** —— 加载器，**需要你自己改名后再使用**，可以改成以下任意名称：
+1. **nvngx.dll** —— 加载器 + 核心功能，全部合并在这一个文件里，**需要你自己改名后再使用**，可以改成以下任意名称：
    `version.dll` / `winhttp.dll` / `dbghelp.dll` / `cryptsp.dll`
    推荐改成 `version.dll`，大多数游戏目录下本来没有这个文件，冲突概率低，兼容性更好。
 
    > 为什么不直接打包一个改好名的文件给你：压缩包里如果直接放着一个叫 `version.dll` / `winhttp.dll` 这类系统同名文件，很容易被 Chrome 等浏览器的下载安全扫描误判成病毒，导致下载被拦截或报毒。改成自己动手改名，就不会有这个问题。
-2. **nvidia_mfg_bridge.dll** —— 核心功能文件，保持原文件名即可。
-3. **libxess_fg.dll**、**libxell.dll** —— 可选 Intel XeSS 插帧功能所需的支持文件，保持原文件名即可。默认不开启时是纯透传，不影响正常使用，不需要用到 XeSS 插帧选项的话也可以不用管它们。
-4. **nvngx_dlssg.sm86.dll** —— 可选文件，NVIDIA 官方 DLSS 帧生成移植到 RTX 30 系列（Ampere/sm_86）的原生实现，配合配置文件里的 `FGMode=2` 使用（实验性）。保持原文件名即可。不用这个模式可以不放这个文件；但开了 `FGMode=2` 又没放这个文件，帧生成会直接不可用而不是自动回退，方便第一时间发现是不是忘了放文件。
+2. **libxess_fg.dll**、**libxell.dll** —— 可选 Intel XeSS 插帧功能所需的支持文件，保持原文件名即可。默认不开启时是纯透传，不影响正常使用，不需要用到 XeSS 插帧选项的话也可以不用管它们。
+3. **nvngx_dlssg.sm75.dll**、**nvngx_dlssg.sm86.dll** —— 可选文件，NVIDIA 官方 DLSS 帧生成的原生实现，配合配置文件里的 `FGMode=2` 使用（实验性）。`sm75` 对应 RTX 20 系列（Turing），`sm86` 对应 RTX 30 系列（Ampere），具体加载哪一个由 `FGProviderArch` 配置项决定（默认 `auto` 自动识别显卡架构）。保持原文件名，跟其他文件放在同一目录即可，两个都放着也没关系，用不到的那个不会被加载。不使用这个模式的话可以都不放；但开了 `FGMode=2` 却没有对应架构的文件，帧生成会直接不可用而不是自动回退，方便第一时间发现是不是忘了放文件。
 
 把改名后的加载器文件，和其余几个文件一起复制到游戏主程序所在目录（和游戏 `.exe` 同一个文件夹），启动游戏即可生效。
 
@@ -46,7 +47,7 @@ Release 压缩包内包含：
 
 ### 卸载
 
-删除复制进去的所有文件即可（改名后的加载器、`nvidia_mfg_bridge.dll`、`libxess_fg.dll`、`libxell.dll`、`nvngx_dlssg.sm86.dll`），不会修改任何系统文件，也不会留下多余组件。
+删除复制进去的所有文件即可（改名后的加载器、`libxess_fg.dll`、`libxell.dll`、`nvngx_dlssg.sm75.dll`、`nvngx_dlssg.sm86.dll`），不会修改任何系统文件，也不会留下多余组件。
 
 ### 配置文件
 
@@ -56,9 +57,14 @@ Release 压缩包内包含：
 - `FGMode`：选择使用哪种插帧实现，三选一。
   - `0` = 本 Mod 自带的 FSR3.1 插帧（默认），支持 2x~6x 多倍插帧。
   - `1` = Intel XeSS 插帧（实验性），仅 DX12，最高 2 倍，且需要在游戏内选中"DLSS 超分辨率"才会生效。
-  - `2` = NVIDIA 官方 DLSS 帧生成，移植到 RTX 30 系列（Ampere/sm_86）上原生运行（实验性）。需要 `nvngx_dlssg.sm86.dll` 放在本 DLL 旁边；帧生成用的是 NVIDIA 官方那一套，本 Mod 自己的 3x~6x 倍率不适用于这个模式。
+  - `2` = NVIDIA 官方 DLSS 帧生成，移植到 RTX 20 / RTX 30（Turing/sm_75、Ampere/sm_86）上原生运行（实验性）。需要对应架构的 provider 文件放在本 DLL 旁边（见上面安装说明）。这个模式现在也支持 2x~6x，倍率同样通过 Home 键覆盖菜单或游戏内菜单调整，不再局限于 NVIDIA 官方默认的固定 2 倍。
 
   三者互斥，只能选一个。（旧版本的 `EnableXessFrameGeneration` 开关仍然兼容：ini 里没有 `FGMode` 时会继续读取这个旧开关。）
+- `FGProviderArch`：仅在 `FGMode=2` 时生效，决定加载哪个 provider 文件。
+  - `auto`（默认）= 根据显卡自动判断：算力 7.x 加载 `nvngx_dlssg.sm75.dll`，8.0 及以上加载 `nvngx_dlssg.sm86.dll`。
+  - `sm86` / `sm75` = 强制指定加载对应文件。
+
+  选中的文件如果跟实际显卡架构不匹配是不会运行的（不会自动换成另一个），日志里会提示该放哪个文件。**RTX 20（sm75）这条路径目前尚未经过真机验证**，只是通过静态检查确认可以正常汇编执行。
 - `EnableNvOFOpticalFlow`：默认开启，仅 DX12 有效。开启后插帧计算运动场时优先使用 NVIDIA 显卡自带的硬件光流引擎（NvOFAPI），画面运动更顺滑；显卡/驱动不支持，或者当前是 HDR 输出（仅支持 8bpc SDR）时会自动静默回退到本 Mod 原有的计算方式，不影响正常使用。实测这个模式下运动更顺滑，但会比不开时多一点点输入延迟。改成 `0` 可以强制关闭，始终使用本 Mod 自己的计算方式。
 - `EnableFrameGenOverrideMenu`：默认开启，仅 DX12 有效，理论上适用于所有接入了 Streamline 的游戏。开启后游戏内按 `Home` 键会弹出一个小面板，循环切换"游戏默认 → 3x → 4x → 5x → 6x → 游戏默认"，强制指定插帧倍率，不受游戏自身设置菜单能选到的档位限制。改成 `0` 可以关闭这个面板。
 - `ForceFrameGenOverride`：默认 `0`（跟随 Home 面板当前的选择）。改成 `1`/`2`/`3`/`4` 可以让游戏一启动就强制从 3x/4x/5x/6x 开始。主要用于同时装了其他也会提供加载器 DLL 的 Mod、导致本 Mod 的 Home 面板没法生效的情况——这时候只能靠这个配置项来强制倍率。
@@ -74,8 +80,8 @@ NVIDIA 官方没有为 RTX 20 / 30 系列开放 DLSS Frame Generation，本 Mod 
 **可选 Intel XeSS 插帧模式**
 除了默认的 FSR3.1 插帧方案，本项目也接入了 Intel XeSS 的插帧能力作为可选替代，最高支持 2 倍，仅 DX12 且需要游戏内启用"DLSS 超分辨率"。默认关闭，可以在配置文件里通过 `FGMode=1` 开启，与 FSR3 插帧互斥。
 
-**NVIDIA 官方原生 DLSS 帧生成（RTX 30，实验性）**
-配置文件设置 `FGMode=2` 后，改用 NVIDIA 官方的 DLSS 帧生成实现，移植到 RTX 30 系列（Ampere/sm_86）上直接运行，而不是转换成 FSR3。需要额外的 `nvngx_dlssg.sm86.dll` 文件配合使用。这个模式下插帧倍率由 NVIDIA 官方逻辑决定，本 Mod 自己的 3x~6x 倍率不适用。
+**NVIDIA 官方原生 DLSS 帧生成，2x~6x（RTX 20 / RTX 30，实验性）**
+配置文件设置 `FGMode=2` 后，改用 NVIDIA 官方的 DLSS 帧生成实现，分别针对 RTX 20（Turing/sm_75）和 RTX 30（Ampere/sm_86）原生编译运行，而不是转换成 FSR3。现在这条路径本身也支持 2x~6x 多倍插帧，不再局限于官方默认的固定 2 倍。需要额外的 provider 文件配合使用（`nvngx_dlssg.sm75.dll` 或 `nvngx_dlssg.sm86.dll`，看显卡架构），由 `FGProviderArch` 决定加载哪个。RTX 20 这条路径目前还没有真机验证过。
 
 **NVIDIA 硬件光流加速（实验性）**
 默认开启，仅 DX12 有效。插帧计算运动场时优先使用 NVIDIA 显卡自带的硬件光流引擎（NvOFAPI），比本 Mod 自己的运算方式更顺滑；不支持的显卡/驱动或 HDR 输出场景会自动静默回退，不影响正常使用，可以在配置文件里关闭。
