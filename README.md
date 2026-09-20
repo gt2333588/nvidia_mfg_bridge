@@ -38,9 +38,13 @@ nvidia_mfg_bridge 在此基础上做了大量进一步开发：
 Release 压缩包内包含：
 
 **nvngx.dll** —— 加载器 + 全部功能，**需要你自己改名后再使用**，可以改成以下任意名称：
-`version.dll` / `winhttp.dll` / `dbghelp.dll` / `cryptsp.dll` / `XINPUT9_1_0.dll`
+`version.dll` / `winhttp.dll` / `dbghelp.dll` / `cryptsp.dll` / `XINPUT9_1_0.dll` / `IPHLPAPI.dll`
 
-推荐改成 `version.dll`，大多数游戏目录下本来没有这个文件，冲突概率低，兼容性更好。如果目标游戏本身已经有其他 Mod 占用了这几个常见名字（比如《赛博朋克 2077》：CET 占了 `version.dll`，游戏自己就带 `dbghelp.dll`），可以试试新增的 `XINPUT9_1_0.dll`，冲突概率更低。
+推荐改成 `version.dll`，大多数游戏目录下本来没有这个文件，冲突概率低，兼容性更好。如果目标游戏本身已经有其他 Mod 占用了这几个常见名字，可以换一个：
+
+- 《赛博朋克 2077》：CET 占了 `version.dll`，游戏自己就带 `dbghelp.dll`，可以用 `XINPUT9_1_0.dll`。
+- 《GTA V 增强版》：能用的身份很少，可以用 `IPHLPAPI.dll`。
+- 《星球大战：绝地武士 幸存者》（Jedi Survivor）：需要改名成 `dbghelp.dll` 才能正常运行，用别的名字可能导致 DLL 无法加载。
 
 > 为什么不直接打包一个改好名的文件给你：压缩包里如果直接放着一个叫 `version.dll` / `winhttp.dll` 这类系统同名文件，很容易被 Chrome 等浏览器的下载安全扫描误判成病毒，导致下载被拦截或报毒。改成自己动手改名，就不会有这个问题。
 
