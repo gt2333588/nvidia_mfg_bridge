@@ -64,7 +64,7 @@ Release 压缩包内包含：
 - `FGMode`：选择使用哪种插帧实现，三选一。
   - `0` = 本 Mod 自带的 FSR3.1 插帧，支持 2x~6x 多倍插帧。
   - `1` = Intel XeSS 插帧（实验性），仅 DX12，最高 2 倍，且需要在游戏内选中"DLSS 超分辨率"才会生效。
-  - `2` = NVIDIA 官方 DLSS 帧生成（默认），移植到 RTX 20 / RTX 30（Turing/sm_75、Ampere/sm_86）上原生运行（实验性）。所需的 provider 会在游戏运行时自动从 `nvngx.dll` 内解包出来，不需要你手动放文件。这个模式现在也支持 2x~6x，倍率同样通过 Home 键覆盖菜单或游戏内菜单调整，不再局限于 NVIDIA 官方默认的固定 2 倍。
+  - `2` = NVIDIA 官方 DLSS 帧生成（默认），移植到 RTX 20 / RTX 30（Turing/sm_75、Ampere/sm_86）上原生运行。所需的 provider 会在游戏运行时自动从 `nvngx.dll` 内解包出来，不需要你手动放文件。这个模式现在也支持 2x~6x，倍率同样通过 Home 键覆盖菜单或游戏内菜单调整，不再局限于 NVIDIA 官方默认的固定 2 倍。
 
   三者互斥，只能选一个。（旧版本的 `EnableXessFrameGeneration` 开关仍然兼容：ini 里没有 `FGMode` 时会继续读取这个旧开关。）
 - `FGProviderArch`：仅在 `FGMode=2` 时生效，决定解包并加载哪个 provider。
@@ -72,6 +72,13 @@ Release 压缩包内包含：
   - `sm86` / `sm75` = 强制指定使用对应的 provider。
 
   选中的 provider 如果跟实际显卡架构不匹配是不会运行的（不会自动换成另一个）。
+- `DlssgPreset`：仅在 `FGMode=2` 时生效，选择 DLSS 帧生成的渲染预设，跟 NVIDIA App 里按游戏设置的那个选项是同一个东西。
+  - `0`（默认）= 跟随显卡驱动配置 / NVIDIA App 的设置。
+  - `A` = 关闭 UI 重组。
+  - `B` = 开启 UI 重组。
+  - `C` = 关闭 UI 重组，并开启 FG Lite（最后一步混合更轻，生成帧开销更小）。
+
+  游戏启动时读取，改了之后要重启游戏才生效；设置了的话会覆盖 NVIDIA App 里的选择。只在本游戏进程里生效，不会改动显卡驱动的设置。
 - `EnableNvOFOpticalFlow`：默认开启，仅 DX12 有效。开启后插帧计算运动场时优先使用 NVIDIA 显卡自带的硬件光流引擎（NvOFAPI），画面运动更顺滑；显卡/驱动不支持，或者当前是 HDR 输出（仅支持 8bpc SDR）时会自动静默回退到本 Mod 原有的计算方式，不影响正常使用。实测这个模式下运动更顺滑，但会比不开时多一点点输入延迟。改成 `0` 可以强制关闭，始终使用本 Mod 自己的计算方式。
 - `EnableFrameGenOverrideMenu`：默认关闭，仅 DX12 有效，理论上适用于所有接入了 Streamline 的游戏。开启后游戏内按 `Home` 键会弹出一个小面板，循环切换"游戏默认 → 3x → 4x → 5x → 6x → 游戏默认"，强制指定插帧倍率，不受游戏自身设置菜单能选到的档位限制。改成 `1` 可以开启这个面板。
 - `ForceFrameGenOverride`：默认 `0`（跟随 Home 面板当前的选择）。改成 `1`/`2`/`3`/`4` 可以让游戏一启动就强制从 3x/4x/5x/6x 开始。主要用于同时装了其他也会提供加载器 DLL 的 Mod、导致本 Mod 的 Home 面板没法生效的情况——这时候只能靠这个配置项来强制倍率。
@@ -94,10 +101,10 @@ NVIDIA 官方没有为 RTX 20 / 30 系列开放 DLSS Frame Generation，本 Mod 
 **可选 Intel XeSS 插帧模式**
 除了 FSR3.1 插帧方案，本项目也接入了 Intel XeSS 的插帧能力作为可选替代，最高支持 2 倍，仅 DX12 且需要游戏内启用"DLSS 超分辨率"。默认关闭，可以在配置文件里通过 `FGMode=1` 开启，与其他插帧方式互斥。
 
-**NVIDIA 官方原生 DLSS 帧生成，2x~6x（RTX 20 / RTX 30，默认，实验性）**
-`FGMode=2`（默认值）使用的是 NVIDIA 官方的 DLSS 帧生成实现，分别针对 RTX 20（Turing/sm_75）和 RTX 30（Ampere/sm_86）原生编译运行，而不是转换成 FSR3，支持 2x~6x 多倍插帧。详细配置见下方「配置文件」。
+**NVIDIA 官方原生 DLSS 帧生成，2x~6x（RTX 20 / RTX 30，默认）**
+`FGMode=2`（默认值）使用的是 NVIDIA 官方的 DLSS 帧生成实现，分别针对 RTX 20（Turing/sm_75）和 RTX 30（Ampere/sm_86）原生编译运行，而不是转换成 FSR3，支持 2x~6x 多倍插帧。还可以通过 `DlssgPreset` 选择 NVIDIA 的渲染预设（包括更省性能的 FG Lite）。详细配置见下方「配置文件」。
 
-**NVIDIA DLSS 降噪/光线重建加持，"DLSS5"（RTX 20 / RTX 30，实验性）**
+**NVIDIA DLSS 降噪/光线重建加持，"DLSS5"（RTX 20 / RTX 30）**
 配置文件设置 `EnableDlssNr`（`1` = 默认，进游戏后按 `Insert` 键开启；`2` = 游戏启动时就直接开启）后，给原生缺少这项效果的游戏叠加一层 NVIDIA 官方的 DLSS 降噪效果，配合任意 `FGMode` 都能用，RTX 20 / RTX 30 系列都支持。游戏内随时可以按 `Insert` 键切换开关。默认用真正的 FP16 网络运行（`Fp16Network=1`），比早期的 FP8 模拟方案快不少——RTX 20 上大约快 25%，RTX 30 上大约快 7~9%，画质没有变化，权重转换失败时会自动退回 FP8。建议插帧前的原生帧率在 60 帧以上体验最好；1080p 用 RTX 3070、1440p 用 RTX 3080 及以上效果最佳。RTX 20 系列只建议 1080p，且显卡性能不低于 RTX 2080S。个别游戏可能出现渲染颜色异常，遇到问题直接关闭即可。
 
 **NVIDIA 硬件光流加速（实验性）**
